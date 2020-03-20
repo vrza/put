@@ -123,8 +123,8 @@ class FileManager:
         return '1 byte'
 
 class FileFunctions(urwid.WidgetPlaceholder):
-  app_name = u'PU Tools'
-  app_version = '0.4'
+  app_name = u'put'
+  app_version = '0.5'
   app_title = f'{app_name} {app_version}'
   module_title = u"File Functions"
   # TODO override with custom palette from config file
