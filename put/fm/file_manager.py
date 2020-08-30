@@ -2,20 +2,18 @@
 
 import datetime
 import functools
+import math
 import os
-import argparse
 import shutil
-import signal
 import subprocess
-import urwid
-from math import log
 
 
 class Editor:
+    DEFAULT_EDITOR = 'vim'
+
     def __init__(self):
-        DEFAULT_EDITOR = 'vim'
         if 'EDITOR' not in os.environ:
-            os.environ['EDITOR'] = os.environ.get('VISUAL', DEFAULT_EDITOR)
+            os.environ['EDITOR'] = os.environ.get('VISUAL', self.DEFAULT_EDITOR)
         self.editorcmd = os.environ['EDITOR']
 
     def edit(self, target):
@@ -48,10 +46,10 @@ def sizeof_fmt(num):
     """Human readable file size"""
     unit_list = list(zip(['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'], [0, 0, 1, 1, 1, 1]))
     if num > 1:
-        exponent = min(int(log(num, 1024)), len(unit_list) - 1)
+        exponent = min(int(math.log(num, 1024)), len(unit_list) - 1)
         quotient = float(num) / 1024 ** exponent
         unit, num_decimals = unit_list[exponent]
-        format_string = '{:.%sf} {}' % (num_decimals)
+        format_string = '{:.%sf} {}' % num_decimals
         return format_string.format(quotient, unit)
     if num == 0:
         return '0 bytes'

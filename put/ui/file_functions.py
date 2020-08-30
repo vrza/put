@@ -37,6 +37,10 @@ class ViListBox(urwid.ListBox):
         return super(ViListBox, self).keypress(size, key)
 
 
+def render_size(size):
+    return '{:>8}'.format(put.fm.file_manager.sizeof_fmt(size))
+
+
 class FileFunctions(urwid.WidgetPlaceholder):
     app_name = u'put'
     app_version = '0.5'
@@ -89,6 +93,7 @@ class FileFunctions(urwid.WidgetPlaceholder):
                              attr_map='file', focus_map='focus')
 
     def __init__(self, wd):
+        super(FileFunctions, self).__init__(self)
         self.editor = put.fm.file_manager.Editor()
         self.fm = put.fm.file_manager.FileManager(wd)
         self.metacontent = list(map(self.metamapper, self.fm.files))
@@ -127,6 +132,7 @@ class FileFunctions(urwid.WidgetPlaceholder):
                                      rline=self.l.get("rline", u'│'),
                                      bline=self.l.get("bline", u'─'),
                                      brcorner=self.l.get("brcorner", u'┘'))
+        self.statbox = None
         self.update_statbox()
         self.footer = urwid.Pile([self.statbox, self.menubox])
         self.view = urwid.Frame(
@@ -134,20 +140,20 @@ class FileFunctions(urwid.WidgetPlaceholder):
             header=urwid.AttrWrap(self.header, 'blue'),
             footer=urwid.AttrWrap(self.footer, 'blue'))
 
-    def render_size(self, size):
-        return '{:>8}'.format(put.fm.file_manager.sizeof_fmt(size))
+        self.loop = urwid.MainLoop(self.view, self.palette,
+                                   unhandled_input=self.unhandled_input)
 
     # TODO extend LineBox to provide update functionality?
     def update_statbox(self):
         stat_listed = urwid.Text(
-            '{:>24}'.format(f'{self.fm.file_count()} files LISTed   = ') + f'{self.render_size(self.fm.total_size)}',
+            '{:>24}'.format(f'{self.fm.file_count()} files LISTed   = ') + f'{render_size(self.fm.total_size)}',
             'left')
         stat_selected = urwid.Text('{:>24}'.format(
-            f'{self.fm.selected_count()} files SELECTed = ') + f'{self.render_size(self.fm.selected_size)}', 'left')
+            f'{self.fm.selected_count()} files SELECTed = ') + f'{render_size(self.fm.selected_size)}', 'left')
         stat_subdir = urwid.Text(
-            '{:>24}'.format(f'{self.fm.file_count()} files in sub-dir = ') + f'{self.render_size(self.fm.total_size)}',
+            '{:>24}'.format(f'{self.fm.file_count()} files in sub-dir = ') + f'{render_size(self.fm.total_size)}',
             'left')
-        stat_available = urwid.Text('{:>24}'.format(f'Available on volume = ') + f'{self.render_size(self.fm.free)}',
+        stat_available = urwid.Text('{:>24}'.format(f'Available on volume = ') + f'{render_size(self.fm.free)}',
                                     'left')
 
         stat_pile_left = urwid.Pile([stat_listed, stat_selected])
@@ -168,7 +174,7 @@ class FileFunctions(urwid.WidgetPlaceholder):
     def update_footer(self):
         self.update_statbox()
         self.footer = urwid.Pile([self.statbox, self.menubox])
-        self.view.set_footer(urwid.AttrWrap(self.footer, 'blue'))
+        self.view.set_footer(urwid.AttrMap(self.footer, 'blue'))
 
     def focus_file_path(self):
         _focus_widget, idx = self.listwalker.get_focus()
@@ -189,16 +195,16 @@ class FileFunctions(urwid.WidgetPlaceholder):
         if idx not in self.fm.selected_files:
             return
         self.fm.unselect_file(idx)
+        file_metadata = put.fm.file_manager.FileMetadata(self.fm.wd, self.fm.files[idx])
+        filename = file_metadata.render(self.fm.max_filename_len)
         self.listwalker[idx] = urwid.AttrMap(
-            SelectableText(put.fm.file_manager.FileMetadata(self.fm.wd, self.fm.files[idx]).render(self.fm.max_filename_len)),
+            SelectableText(filename),
             attr_map='file', focus_map='focus')
         self.listwalker.set_focus((idx + 1) % len(self.listwalker))
         self.update_footer()
 
     # TODO extend mainloop to update widgets?
     def main(self):
-        self.loop = urwid.MainLoop(self.view, self.palette,
-                                   unhandled_input=self.unhandled_input)
         self.loop.run()
 
     def invoke_editor(self):
