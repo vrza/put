@@ -207,6 +207,10 @@ class FileFunctions(urwid.WidgetPlaceholder):
     def main(self):
         self.loop.run()
 
+    def delete_selected_files(self):
+        # TODO ask for confirmation
+        self.fm.delete_selected_files()
+
     def invoke_editor(self):
         self.loop.screen.clear()
         self.editor.edit(self.focus_file_path())
@@ -218,6 +222,9 @@ class FileFunctions(urwid.WidgetPlaceholder):
             print(self.fm.selected_files)
             raise urwid.ExitMainLoop()
         # TODO move this to custom ListBox class
+        if k in ('d', 'D'):
+            self.delete_selected_files()
+            return
         if k in ('e', 'E'):
             self.invoke_editor()
             return

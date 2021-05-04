@@ -96,3 +96,7 @@ class FileManager:
     def unselect_file(self, idx):
         self.selected_files.remove(idx)
         self.recalculate_selected_files_size()
+
+    def delete_selected_files(self):
+        # TODO implement actual file unlinking
+        print(self.selected_files)
