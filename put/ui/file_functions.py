@@ -47,19 +47,20 @@ class FileFunctions(urwid.WidgetPlaceholder):
     app_title = f'{app_name} {app_version}'
     module_title = u"File Functions"
     # TODO override with custom palette from config file
-    palette = [
+    palette_blue = [
         ('body', 'light gray', 'black'),
         ('file', 'light gray', 'black'),
         ('file_sel', 'white', 'black'),
         ('focus', 'black', 'dark red', 'standout'),
         ('focus_sel', 'white', 'dark red', 'standout'),
         ('head', 'light gray', 'dark blue', 'standout'),
-        ('blue', 'light gray', 'dark blue'),
+        ('main', 'light gray', 'dark blue'),
         ('foot', 'light gray', 'black'),
         ('key', 'black', 'white'),
         ('title', 'white', 'black', 'bold'),
         ('columns', 'white', 'dark green', 'bold')
     ]
+    palette = palette_blue
     lines_unicode = {
         "tlcorner": u'┌',
         "tline": u'─',
@@ -137,8 +138,8 @@ class FileFunctions(urwid.WidgetPlaceholder):
         self.footer = urwid.Pile([self.statbox, self.menubox])
         self.view = urwid.Frame(
             body=urwid.AttrWrap(self.listbox, 'body'),
-            header=urwid.AttrWrap(self.header, 'blue'),
-            footer=urwid.AttrWrap(self.footer, 'blue'))
+            header=urwid.AttrWrap(self.header, 'main'),
+            footer=urwid.AttrWrap(self.footer, 'main'))
 
         self.loop = urwid.MainLoop(self.view, self.palette,
                                    unhandled_input=self.unhandled_input)
@@ -174,7 +175,7 @@ class FileFunctions(urwid.WidgetPlaceholder):
     def update_footer(self):
         self.update_statbox()
         self.footer = urwid.Pile([self.statbox, self.menubox])
-        self.view.set_footer(urwid.AttrMap(self.footer, 'blue'))
+        self.view.set_footer(urwid.AttrMap(self.footer, 'main'))
 
     def focus_file_path(self):
         _focus_widget, idx = self.listwalker.get_focus()
