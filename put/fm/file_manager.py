@@ -28,16 +28,20 @@ class FileMetadata:
     def __init__(self, wd, path):
         self.basename = path
         self.name = os.path.join(wd, path)
-        self.size = os.path.getsize(self.name)
+        self.islink = os.path.islink(self.name)
+        self.isbrokenlink = True if self.islink and not os.path.exists(os.readlink(self.name)) else False
+        self.isdir = False if self.isbrokenlink else os.path.isdir(self.name)
+        self.size = 0 if self.isbrokenlink else os.path.getsize(self.name)
 
     def modification_time(self):
         t = os.path.getmtime(self.name)
         return datetime.datetime.fromtimestamp(t)
 
     def render(self, maxnamelen):
-        name = f"{self.basename}\t".expandtabs(maxnamelen + 2)
-        size = '{:>10}'.format(self.size)
-        mtime = self.modification_time().strftime("%Y-%m-%d %H:%M")
+        rendername = f"{self.basename}/" if self.isdir else self.basename
+        name = f"{rendername}\t".expandtabs(maxnamelen + 2)
+        size = '{:>10}'.format('N/A' if self.isbrokenlink else self.size)
+        mtime = 'N/A' if self.isbrokenlink else self.modification_time().strftime("%Y-%m-%d %H:%M")
         return name + size + "  " + mtime
 
 
@@ -63,7 +67,8 @@ class FileManager:
         self.total, self.used, self.free = shutil.disk_usage(self.wd)
 
         # TODO different sorts
-        self.files = sorted([f for f in os.listdir(self.wd) if os.path.isfile(os.path.join(self.wd, f))])
+        #self.files = sorted([f for f in os.listdir(self.wd) if os.path.isfile(os.path.join(self.wd, f))])
+        self.files = sorted([f for f in os.listdir(self.wd)])
         self.max_filename_len = max(list(map(lambda x: len(x), self.files))) if self.files else 12
         self.total_size = 0
         self.recalculate_total_files_size()
@@ -78,13 +83,17 @@ class FileManager:
         return len(self.selected_files)
 
     def recalculate_total_files_size(self):
-        self.total_size = functools.reduce(lambda x, y: x + y, list(
-            map(lambda x: os.path.getsize(os.path.join(self.wd, x)), self.files))) if self.files else 0
+        self.total_size = self.recalculate_files_size(self.files)
 
     def recalculate_selected_files_size(self):
-        self.selected_size = functools.reduce(lambda x, y: x + y, list(
-            map(lambda i: os.path.getsize(os.path.join(self.wd, self.files[i])),
-                self.selected_files))) if self.selected_files else 0
+        self.selected_size = self.recalculate_files_size(self.selected_file_paths())
+
+    def selected_file_paths(self):
+        return list(map(lambda i: self.files[i], self.selected_files))
+
+    def recalculate_files_size(self, files):
+        return functools.reduce(lambda x, y: x + y, list(
+            map(lambda x: FileMetadata(self.wd, x).size, files))) if files else 0
 
     def get_path(self, idx):
         return os.path.join(self.wd, self.files[idx])

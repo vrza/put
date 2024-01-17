@@ -2,6 +2,7 @@
 
 import os
 import signal
+
 import urwid
 
 import put.fm.file_manager
@@ -51,8 +52,16 @@ class FileFunctions(urwid.WidgetPlaceholder):
         ('body', 'light gray', 'black'),
         ('file', 'light gray', 'black'),
         ('file_sel', 'white', 'black'),
-        ('focus', 'black', 'dark red', 'standout'),
-        ('focus_sel', 'white', 'dark red', 'standout'),
+        ('file_focus', 'black', 'dark red', 'standout'),
+        ('file_focus_sel', 'white', 'dark red', 'standout'),
+        ('dir', 'light blue', 'black'),
+        ('dir_sel', 'light cyan', 'black'),
+        ('dir_focus', 'light blue', 'dark red', 'standout'),
+        ('dir_focus_sel', 'light cyan', 'dark red', 'standout'),
+        ('broken_link', 'white', 'light red'),
+        ('broken_link_sel', 'dark blue', 'light red'),
+        ('broken_link_focus', 'black', 'dark red', 'standout'),
+        ('broken_link_focus_sel', 'white', 'dark red', 'standout'),
         ('head', 'light gray', 'dark blue', 'standout'),
         ('main', 'light gray', 'dark blue'),
         ('foot', 'light gray', 'black'),
@@ -90,8 +99,11 @@ class FileFunctions(urwid.WidgetPlaceholder):
     # l = lines_7bit
 
     def metamapper(self, x):
-        return urwid.AttrMap(SelectableText(put.fm.file_manager.FileMetadata(self.fm.wd, x).render(self.fm.max_filename_len)),
-                             attr_map='file', focus_map='focus')
+        metadata = put.fm.file_manager.FileMetadata(self.fm.wd, x)
+        attrmap = 'dir' if metadata.isdir else 'file'
+        focusmap = 'dir_focus' if metadata.isdir else 'file_focus'
+        return urwid.AttrMap(SelectableText(metadata.render(self.fm.max_filename_len)), attr_map=attrmap, focus_map=focusmap)
+
 
     def __init__(self, wd):
         super(FileFunctions, self).__init__(self)
@@ -185,22 +197,27 @@ class FileFunctions(urwid.WidgetPlaceholder):
     def select(self):
         _focus_widget, idx = self.listwalker.get_focus()
         self.fm.select_file(idx)
+        metadata = put.fm.file_manager.FileMetadata(self.fm.wd, self.fm.files[idx])
+        attrmap = 'broken_link_sel' if metadata.isbrokenlink else ('dir_sel' if metadata.isdir else 'file_sel')
+        focusmap = 'broken_link_focus_sel' if metadata.isbrokenlink else ('dir_focus_sel' if metadata.isdir else 'file_focus_sel')
         self.listwalker[idx] = urwid.AttrMap(
-            SelectableText(put.fm.file_manager.FileMetadata(self.fm.wd, self.fm.files[idx]).render(self.fm.max_filename_len)),
-            attr_map='file_sel', focus_map='focus_sel')
+            SelectableText(metadata.render(self.fm.max_filename_len)),
+            attr_map=attrmap, focus_map=focusmap)
         self.listwalker.set_focus((idx + 1) % len(self.listwalker))
         self.update_footer()
 
     def unselect(self):
-        _focus_widget, idx = self.listwalker.get_focus()
+        _focus_widget, idx = self.  listwalker.get_focus()
         if idx not in self.fm.selected_files:
             return
         self.fm.unselect_file(idx)
-        file_metadata = put.fm.file_manager.FileMetadata(self.fm.wd, self.fm.files[idx])
-        filename = file_metadata.render(self.fm.max_filename_len)
+        metadata = put.fm.file_manager.FileMetadata(self.fm.wd, self.fm.files[idx])
+        filename = metadata.render(self.fm.max_filename_len)
+        attrmap = 'broken_link' if metadata.isbrokenlink else ('dir' if metadata.isdir else 'file')
+        focusmap = 'broken_link_focus' if metadata.isbrokenlink else ('dir_focus' if metadata.isdir else 'file_focus')
         self.listwalker[idx] = urwid.AttrMap(
             SelectableText(filename),
-            attr_map='file', focus_map='focus')
+            attr_map=attrmap, focus_map=focusmap)
         self.listwalker.set_focus((idx + 1) % len(self.listwalker))
         self.update_footer()
 
