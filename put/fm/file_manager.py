@@ -64,6 +64,16 @@ def sizeof_fmt(num):
 class FileManager:
     def __init__(self, workdir):
         self.wd = workdir
+        self.files = self.selected_files = None
+        self.total = self.used = self.free = 0
+        self.max_filename_len = self.total_size = self.selected_size = 0
+        self.change_dir(workdir)
+
+    def change_dir(self, workdir):
+        self.wd = workdir
+        self.refresh()
+
+    def refresh(self):
         self.total, self.used, self.free = shutil.disk_usage(self.wd)
 
         # TODO different sorts
@@ -107,5 +117,6 @@ class FileManager:
         self.recalculate_selected_files_size()
 
     def delete_selected_files(self):
-        # TODO implement actual file unlinking
-        print(self.selected_files)
+        for idx in self.selected_files:
+            os.unlink(self.get_path(idx))
+        self.refresh()

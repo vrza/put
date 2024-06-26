@@ -49,8 +49,8 @@ class FileFunctions(urwid.WidgetPlaceholder):
     module_title = u"File Functions"
     # TODO override with custom palette from config file
     palette_blue = [
-        ('body', 'light gray', 'black'),
-        ('file', 'light gray', 'black'),
+        ('body', 'default', 'default'),
+        ('file', 'default', 'default'),
         ('file_sel', 'white', 'black'),
         ('file_focus', 'black', 'dark red', 'standout'),
         ('file_focus_sel', 'white', 'dark red', 'standout'),
@@ -62,9 +62,9 @@ class FileFunctions(urwid.WidgetPlaceholder):
         ('broken_link_sel', 'dark blue', 'light red'),
         ('broken_link_focus', 'black', 'dark red', 'standout'),
         ('broken_link_focus_sel', 'white', 'dark red', 'standout'),
-        ('head', 'light gray', 'dark blue', 'standout'),
-        ('main', 'light gray', 'dark blue'),
-        ('foot', 'light gray', 'black'),
+        ('head', 'default', 'dark blue', 'standout'),
+        ('main', 'default', 'dark blue'),
+        ('foot', 'default', 'default'),
         ('key', 'black', 'white'),
         ('title', 'white', 'black', 'bold'),
         ('columns', 'white', 'dark green', 'bold')
@@ -109,7 +109,6 @@ class FileFunctions(urwid.WidgetPlaceholder):
         super(FileFunctions, self).__init__(self)
         self.editor = put.fm.file_manager.Editor()
         self.fm = put.fm.file_manager.FileManager(wd)
-        self.metacontent = list(map(self.metamapper, self.fm.files))
         self.appname_line = urwid.Text(self.app_title, 'left')
 
         self.module_fill = urwid.SolidFill(self.l.get("tline", u'─'))
@@ -125,8 +124,12 @@ class FileFunctions(urwid.WidgetPlaceholder):
                                   (1, self.module_overlay),
                                   self.path_line,
                                   self.column_titles])
-        self.listwalker = urwid.SimpleFocusListWalker(self.metacontent)
-        self.listbox = ViListBox(self.listwalker)
+
+        self.metacontent = None
+        self.listbox = None
+        self.listwalker = None
+        self.update_file_list()
+
         self.menu = urwid.Text(
             [('key', 'C'), "opy ", ('key', 'M'), "ove c", ('key', 'O'), "mp ", ('key', 'F'), "ind ", ('key', 'R'),
              "ename ", ('key', 'D'), "elete view/", ('key', 'E'), "dit ", ('key', 'P'), "ermissions o", ('key', 'W'),
@@ -145,9 +148,12 @@ class FileFunctions(urwid.WidgetPlaceholder):
                                      rline=self.l.get("rline", u'│'),
                                      bline=self.l.get("bline", u'─'),
                                      brcorner=self.l.get("brcorner", u'┘'))
+
         self.statbox = None
         self.update_statbox()
+
         self.footer = urwid.Pile([self.statbox, self.menubox])
+
         self.view = urwid.Frame(
             body=urwid.AttrWrap(self.listbox, 'body'),
             header=urwid.AttrWrap(self.header, 'main'),
@@ -155,6 +161,15 @@ class FileFunctions(urwid.WidgetPlaceholder):
 
         self.loop = urwid.MainLoop(self.view, self.palette,
                                    unhandled_input=self.unhandled_input)
+
+    def update_file_list(self):
+        self.metacontent = list(map(self.metamapper, self.fm.files))
+        self.listwalker = urwid.SimpleFocusListWalker(self.metacontent)
+        self.listbox = ViListBox(self.listwalker)
+
+    def update_body(self):
+        self.view.body = urwid.AttrWrap(self.listbox, 'body')
+        #self.view.render()
 
     # TODO extend LineBox to provide update functionality?
     def update_statbox(self):
@@ -187,7 +202,7 @@ class FileFunctions(urwid.WidgetPlaceholder):
     def update_footer(self):
         self.update_statbox()
         self.footer = urwid.Pile([self.statbox, self.menubox])
-        self.view.set_footer(urwid.AttrMap(self.footer, 'main'))
+        self.view.footer = urwid.AttrMap(self.footer, 'main')
 
     def focus_file_path(self):
         _focus_widget, idx = self.listwalker.get_focus()
@@ -237,11 +252,13 @@ class FileFunctions(urwid.WidgetPlaceholder):
     def unhandled_input(self, k):
         # update display of focus directory
         if k in ('q', 'Q', 'esc'):
-            print(self.fm.selected_files)
             raise urwid.ExitMainLoop()
         # TODO move this to custom ListBox class
         if k in ('d', 'D'):
             self.delete_selected_files()
+            self.update_file_list()
+            self.update_body()
+            self.update_footer()
             return
         if k in ('e', 'E'):
             self.invoke_editor()
