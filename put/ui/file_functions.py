@@ -255,6 +255,8 @@ class FileFunctions(urwid.WidgetPlaceholder):
             raise urwid.ExitMainLoop()
         # TODO move this to custom ListBox class
         if k in ('d', 'D'):
+            if self.fm.selected_count() == 0:
+                return
             self.delete_selected_files()
             self.update_file_list()
             self.update_body()
