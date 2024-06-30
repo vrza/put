@@ -242,6 +242,14 @@ class FileFunctions(urwid.WidgetPlaceholder):
     def main(self):
         self.loop.run()
 
+    def change_directory(self, path):
+        if os.path.isdir(path) and os.access(path, os.R_OK):
+            self.fm.change_dir(path)
+            self.update_file_list()
+            self.update_body()
+            self.update_footer()
+
+
     def delete_selected_files(self):
         # TODO ask for confirmation
         self.fm.delete_selected_files()
@@ -275,17 +283,8 @@ class FileFunctions(urwid.WidgetPlaceholder):
             return
         if k in ('right'):
             path = self.focus_file_path()
-            if os.path.isdir(path) and os.access(path, os.R_OK):
-                self.fm.change_dir(path)
-                self.update_file_list()
-                self.update_body()
-                self.update_footer()
+            self.change_directory((path))
             return
         if k in ('left'):
             path = pathlib.Path(self.fm.wd).parent.absolute()
-            if os.path.isdir(path) and os.access(path, os.R_OK):
-                self.fm.change_dir(path)
-                self.update_file_list()
-                self.update_body()
-                self.update_footer()
-            return
+            self.change_directory(path)
