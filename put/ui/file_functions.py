@@ -3,6 +3,8 @@
 import os
 import signal
 
+import pathlib
+
 import urwid
 
 import put.fm.file_manager
@@ -270,4 +272,20 @@ class FileFunctions(urwid.WidgetPlaceholder):
             return
         if k in ('f1'):
             self.unselect()
+            return
+        if k in ('right'):
+            path = self.focus_file_path()
+            if os.path.isdir(path) and os.access(path, os.R_OK):
+                self.fm.change_dir(path)
+                self.update_file_list()
+                self.update_body()
+                self.update_footer()
+            return
+        if k in ('left'):
+            path = pathlib.Path(self.fm.wd).parent.absolute()
+            if os.path.isdir(path) and os.access(path, os.R_OK):
+                self.fm.change_dir(path)
+                self.update_file_list()
+                self.update_body()
+                self.update_footer()
             return
